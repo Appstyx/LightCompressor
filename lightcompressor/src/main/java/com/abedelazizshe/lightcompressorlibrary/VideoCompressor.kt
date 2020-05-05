@@ -1,15 +1,31 @@
 package com.abedelazizshe.lightcompressorlibrary
 
-import com.abedelazizshe.lightcompressorlibrary.Compressor.compressVideo
-import com.abedelazizshe.lightcompressorlibrary.Compressor.isRunning
 import kotlinx.coroutines.*
 
-object VideoCompressor : CoroutineScope by MainScope() {
+class VideoCompressor private constructor(config: Config) : CoroutineScope by MainScope() {
+
+    companion object{
+        @Volatile
+        private var INSTANCE: VideoCompressor? = null
+
+        @JvmStatic
+        fun getInstance(
+            config: Config = Config()
+        ): VideoCompressor = INSTANCE ?: synchronized(this) {
+            INSTANCE ?: VideoCompressor(config).also { INSTANCE = it }
+        }
+
+        fun destroy() {
+            INSTANCE = null
+        }
+    }
 
     private var job: Job = Job()
 
+    private val compressor: Compressor = Compressor.getInstance(config)
+
    private fun doVideoCompression(srcPath: String, destPath: String, listener: CompressionListener) = launch {
-        isRunning = true
+        compressor.isRunning = true
         listener.onStart()
         val result = startCompression(srcPath, destPath, listener)
 
@@ -28,13 +44,13 @@ object VideoCompressor : CoroutineScope by MainScope() {
 
     fun cancel(){
         job.cancel()
-        isRunning = false
+        compressor.isRunning = false
     }
 
     // To run code in Background Thread
     private suspend fun startCompression(srcPath: String, destPath: String, listener: CompressionListener) : Boolean = withContext(Dispatchers.IO){
 
-        return@withContext compressVideo(srcPath, destPath, object : CompressionProgressListener {
+        return@withContext compressor.compressVideo(srcPath, destPath, object : CompressionProgressListener {
             override fun onProgressChanged(percent: Float) {
                 listener.onProgress(percent)
             }

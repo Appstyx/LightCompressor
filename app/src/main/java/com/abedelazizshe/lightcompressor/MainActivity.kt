@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         cancel.setOnClickListener {
-            VideoCompressor.cancel()
+            VideoCompressor.getInstance().cancel()
         }
 
         videoLayout.setOnClickListener { VideoPlayerActivity.start(this, path) }
@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
 
                     var time = 0L
 
-                    VideoCompressor.start(
+                    VideoCompressor.getInstance().start(
                         path,
                         desFile.path,
                         object : CompressionListener {
@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             override fun onCancelled() {
-                                Log.wtf("TAG", "compression has been canclled")
+                                Log.wtf("TAG", "compression has been cancelled")
                                 // make UI changes, cleanup, etc
                             }
                         })

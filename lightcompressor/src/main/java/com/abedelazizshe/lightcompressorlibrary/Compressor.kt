@@ -14,12 +14,34 @@ import kotlin.math.roundToInt
  * elaziz.shehadeh@gmail.com
  */
 
-object Compressor {
+data class Config(
+    val minBitrate: Int = 750_000,
+    val minHeight: Double = 640.0,
+    val minWidth: Double = 360.0,
+    val bitrate: Int = 400_000
+)
 
-    private const val MIN_BITRATE = 2000000
-    private const val MIN_HEIGHT = 640.0
-    private const val MIN_WIDTH = 360.0
-    private const val MIME_TYPE = "video/avc"
+class Compressor private constructor(
+    private val config: Config
+) {
+
+    companion object {
+        private const val MIME_TYPE = "video/avc"
+
+        @Volatile
+        private var INSTANCE: Compressor? = null
+
+        @JvmStatic
+        fun getInstance(
+            config: Config
+        ): Compressor = INSTANCE ?: synchronized(this) {
+            INSTANCE ?: Compressor(config).also { INSTANCE = it }
+        }
+
+        fun destroy() {
+            INSTANCE = null
+        }
+    }
 
     var isRunning = true
 
@@ -50,10 +72,10 @@ object Compressor {
                 .toLong() * 1000
 
         //There are min values set to determine if the file needs to be compressed or not
-        if (bitrate <= MIN_BITRATE || height <= MIN_HEIGHT || width <= MIN_WIDTH) return false
+        if (bitrate <= config.minBitrate || height <= config.minHeight || width <= config.minWidth) return false
 
         //Handle new bitrate value
-        val newBitrate = getBitrate(bitrate)
+        val newBitrate = config.bitrate
 
         //Handle new width and height values
         var (newWidth, newHeight) = generateWidthAndHeight(width.toDouble(), height.toDouble())
@@ -360,20 +382,6 @@ object Compressor {
     }
 
     /**
-     * Get fixed bitrate value based on the file's current bitrate
-     * @param bitrate file's current bitrate
-     * @return new smaller bitrate value
-     */
-    private fun getBitrate(bitrate: Int): Int {
-        return when {
-            bitrate >= 15000000 -> 2000000 // > 15Mbps becomes 2Mbps
-            bitrate >= 8000000 -> 1500000 // > 8Mbps becomes 1.5MbpsMB
-            bitrate >= 4000000 -> 1000000 // > 4Mbps becomes 1Mbps
-            else -> 750000 // other values become 750Kbps
-        }
-    }
-
-    /**
      * Generate new width and height for source file
      * @param width file's original width
      * @param height file's original height
@@ -381,27 +389,8 @@ object Compressor {
      */
     private fun generateWidthAndHeight(width: Double, height: Double): Pair<Int, Int> {
 
-        val newWidth: Double
-        val newHeight: Double
-
-        when {
-            width >= 1920 || height >= 1920 -> {
-                newWidth = (width * 0.5)
-                newHeight = (height * 0.5)
-            }
-            width >= 1280 || height >= 1280 -> {
-                newWidth = (width * 0.75)
-                newHeight = (height * 0.75)
-            }
-            width >= 960 || height >= 960 -> {
-                newWidth = MIN_HEIGHT
-                newHeight = MIN_WIDTH
-            }
-            else -> {
-                newWidth = width
-                newHeight = height
-            }
-        }
+        val newWidth: Double = config.minHeight
+        val newHeight: Double = config.minWidth
 
         return Pair(2 * ((newWidth / 2).roundToInt()), 2 * ((newHeight / 2).roundToInt()))
     }

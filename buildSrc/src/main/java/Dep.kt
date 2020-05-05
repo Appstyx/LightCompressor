@@ -1,7 +1,7 @@
 object Dep {
     object Version {
         const val buildGradle = "3.5.3"
-        const val kotlin = "1.3.50"
+        const val kotlin = "1.3.72"
         const val junit = "4.12"
         const val espresso = "3.2.0"
         const val androidX = "1.1.0"
