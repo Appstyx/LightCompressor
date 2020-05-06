@@ -418,8 +418,8 @@ class Compressor(
         outputFormat.apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat)
             setInteger(MediaFormat.KEY_BIT_RATE, newBitrate)
-            setInteger(MediaFormat.KEY_FRAME_RATE, 30)
-            setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 15)
+//             setInteger(MediaFormat.KEY_FRAME_RATE, 30)
+//             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 15)
         }
     }
 
