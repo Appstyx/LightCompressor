@@ -15,32 +15,24 @@ import kotlin.math.roundToInt
  */
 
 data class Config(
-    val minBitrate: Int = 750_000,
     val minHeight: Double = 640.0,
     val minWidth: Double = 360.0,
-    val bitrate: Int = 400_000
+    val minBitrate: Int = 750_000
 )
 
-class Compressor private constructor(
+data class CompressionResult(
+    val compressionWasNeeed: Boolean,
+    val succeeded: Boolean,
+    val cancelled: Boolean = false,
+    val errorMessage: String? = null
+)
+
+class Compressor(
     private val config: Config
 ) {
 
     companion object {
         private const val MIME_TYPE = "video/avc"
-
-        @Volatile
-        private var INSTANCE: Compressor? = null
-
-        @JvmStatic
-        fun getInstance(
-            config: Config
-        ): Compressor = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: Compressor(config).also { INSTANCE = it }
-        }
-
-        fun destroy() {
-            INSTANCE = null
-        }
     }
 
     var isRunning = true
@@ -49,7 +41,7 @@ class Compressor private constructor(
         source: String,
         destination: String,
         listener: CompressionProgressListener
-    ): Boolean {
+    ): CompressionResult {
 
         //Retrieve the source's metadata to be used as input to generate new values for compression
         val mediaMetadataRetriever = MediaMetadataRetriever()
@@ -72,13 +64,16 @@ class Compressor private constructor(
                 .toLong() * 1000
 
         //There are min values set to determine if the file needs to be compressed or not
-        if (bitrate <= config.minBitrate || height <= config.minHeight || width <= config.minWidth) return false
+        if (bitrate <= config.minBitrate || height <= config.minHeight || width <= config.minWidth) {
+            File(source).copyTo(File(destination), true)
+            return CompressionResult(compressionWasNeeed = false, succeeded = true)
+        }
 
         //Handle new bitrate value
-        val newBitrate = config.bitrate
+        val newBitrate = config.minBitrate
 
         //Handle new width and height values
-        var (newWidth, newHeight) = generateWidthAndHeight(width.toDouble(), height.toDouble())
+        var (newWidth, newHeight) = generateWidthAndHeight()
 
         //Handle rotation values and swapping height and width if needed
         rotation = when (rotation) {
@@ -93,7 +88,7 @@ class Compressor private constructor(
         }
 
         val file = File(source)
-        if (!file.canRead()) return false
+        if (!file.canRead()) return CompressionResult(compressionWasNeeed = true, succeeded = false, errorMessage = "File can't be read")
 
         var noExceptions = true
 
@@ -217,7 +212,7 @@ class Compressor private constructor(
 
                                 if(!isRunning){
                                     listener.onProgressCancelled()
-                                    return false
+                                    return CompressionResult(compressionWasNeeed = true, succeeded = false, cancelled = true)
                                 }
 
                                 //Encoder
@@ -361,7 +356,8 @@ class Compressor private constructor(
                     }
 
                 }else{
-                    return false
+                    File(source).copyTo(File(destination), true)
+                    return CompressionResult(compressionWasNeeed = false, succeeded = true)
                 }
                 extractor.release()
                 try {
@@ -374,24 +370,20 @@ class Compressor private constructor(
                 Log.e("Compressor", exception.message)
             }
 
-            return true
+            return CompressionResult(compressionWasNeeed = true, succeeded = true)
         }
 
-        return false
+        return CompressionResult(compressionWasNeeed = true, succeeded = false, errorMessage = "Video has an invalid size")
 
     }
 
     /**
      * Generate new width and height for source file
-     * @param width file's original width
-     * @param height file's original height
      * @return new width and height pair
      */
-    private fun generateWidthAndHeight(width: Double, height: Double): Pair<Int, Int> {
-
+    private fun generateWidthAndHeight(): Pair<Int, Int> {
         val newWidth: Double = config.minHeight
         val newHeight: Double = config.minWidth
-
         return Pair(2 * ((newWidth / 2).roundToInt()), 2 * ((newHeight / 2).roundToInt()))
     }
 

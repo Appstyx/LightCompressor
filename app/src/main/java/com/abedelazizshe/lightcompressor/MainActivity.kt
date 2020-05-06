@@ -34,6 +34,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var path: String
 
+    private val videoCompressor = VideoCompressor()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -45,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         cancel.setOnClickListener {
-            VideoCompressor.getInstance().cancel()
+            videoCompressor.cancel()
         }
 
         videoLayout.setOnClickListener { VideoPlayerActivity.start(this, path) }
@@ -93,7 +95,7 @@ class MainActivity : AppCompatActivity() {
 
                     var time = 0L
 
-                    VideoCompressor.getInstance().start(
+                    videoCompressor.start(
                         path,
                         desFile.path,
                         object : CompressionListener {
@@ -122,8 +124,8 @@ class MainActivity : AppCompatActivity() {
                                     progress.visibility = View.GONE
                                 }, 50)
                             }
-                            override fun onFailure() {
-                                progress.text = "This video cannot be compressed!"
+                            override fun onFailure(errorMessage: String?) {
+                                progress.text = "This video cannot be compressed! ${errorMessage ?: ""}"
                             }
 
                             override fun onCancelled() {

@@ -8,7 +8,7 @@ package com.abedelazizshe.lightcompressorlibrary
 interface CompressionListener {
     fun onStart()
     fun onSuccess()
-    fun onFailure()
+    fun onFailure(errorMessage: String?)
     fun onProgress(percent: Float)
     fun onCancelled()
 }

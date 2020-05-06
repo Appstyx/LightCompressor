@@ -2,27 +2,11 @@ package com.abedelazizshe.lightcompressorlibrary
 
 import kotlinx.coroutines.*
 
-class VideoCompressor private constructor(config: Config) : CoroutineScope by MainScope() {
-
-    companion object{
-        @Volatile
-        private var INSTANCE: VideoCompressor? = null
-
-        @JvmStatic
-        fun getInstance(
-            config: Config = Config()
-        ): VideoCompressor = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: VideoCompressor(config).also { INSTANCE = it }
-        }
-
-        fun destroy() {
-            INSTANCE = null
-        }
-    }
+class VideoCompressor(config: Config = Config()) : CoroutineScope by MainScope() {
 
     private var job: Job = Job()
 
-    private val compressor: Compressor = Compressor.getInstance(config)
+    private val compressor: Compressor = Compressor(config)
 
    private fun doVideoCompression(srcPath: String, destPath: String, listener: CompressionListener) = launch {
         compressor.isRunning = true
@@ -30,10 +14,10 @@ class VideoCompressor private constructor(config: Config) : CoroutineScope by Ma
         val result = startCompression(srcPath, destPath, listener)
 
         // Runs in Main(UI) Thread
-        if (result) {
+        if (result.succeeded) {
             listener.onSuccess()
         } else {
-            listener.onFailure()
+            listener.onFailure(result.errorMessage)
         }
 
     }
@@ -48,7 +32,7 @@ class VideoCompressor private constructor(config: Config) : CoroutineScope by Ma
     }
 
     // To run code in Background Thread
-    private suspend fun startCompression(srcPath: String, destPath: String, listener: CompressionListener) : Boolean = withContext(Dispatchers.IO){
+    private suspend fun startCompression(srcPath: String, destPath: String, listener: CompressionListener) : CompressionResult = withContext(Dispatchers.IO){
 
         return@withContext compressor.compressVideo(srcPath, destPath, object : CompressionProgressListener {
             override fun onProgressChanged(percent: Float) {
@@ -60,6 +44,5 @@ class VideoCompressor private constructor(config: Config) : CoroutineScope by Ma
             }
         })
     }
-
 
 }
