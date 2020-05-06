@@ -110,7 +110,7 @@ class Compressor(
                 val extractor = MediaExtractor()
                 extractor.setDataSource(file.toString())
 
-                if (newWidth != width || newHeight != height) {
+//                 if (newWidth != width || newHeight != height) {
 
                     // Start with video track
                     val videoIndex = selectTrack(extractor, isVideo = true)
@@ -355,10 +355,10 @@ class Compressor(
                         }
                     }
 
-                }else{
-                    File(source).copyTo(File(destination), true)
-                    return CompressionResult(compressionWasNeeed = false, succeeded = true)
-                }
+//                 }else{
+//                     File(source).copyTo(File(destination), true)
+//                     return CompressionResult(compressionWasNeeed = false, succeeded = true)
+//                 }
                 extractor.release()
                 try {
                     mediaMuxer.finishMovie()
