@@ -64,7 +64,7 @@ class Compressor(
                 .toLong() * 1000
 
         //There are min values set to determine if the file needs to be compressed or not
-        if (bitrate <= config.minBitrate || height <= config.minHeight || width <= config.minWidth) {
+        if (bitrate <= config.minBitrate) {
             File(source).copyTo(File(destination), true)
             return CompressionResult(compressionWasNeeed = false, succeeded = true)
         }
