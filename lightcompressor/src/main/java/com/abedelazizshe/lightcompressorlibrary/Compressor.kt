@@ -73,7 +73,7 @@ class Compressor(
         val newBitrate = config.minBitrate
 
         //Handle new width and height values
-        var (newWidth, newHeight) = generateWidthAndHeight()
+        var (newWidth, newHeight) = generateWidthAndHeight(width.toDouble(), height.toDouble())
 
         //Handle rotation values and swapping height and width if needed
         rotation = when (rotation) {
@@ -378,9 +378,11 @@ class Compressor(
      * Generate new width and height for source file
      * @return new width and height pair
      */
-    private fun generateWidthAndHeight(): Pair<Int, Int> {
-        val newWidth: Double = config.minHeight
-        val newHeight: Double = config.minWidth
+    private fun generateWidthAndHeight(width: Double, height: Double): Pair<Int, Int> {
+        val originalAspectRatio = width / height
+        val targetAspectRatio = config.minWidth / config.minHeight
+        val newWidth: Double = if (targetAspectRatio > originalAspectRatio) { width * config.minHeight / height } else { config.minWidth }
+        val newHeight: Double = if (targetAspectRatio > originalAspectRatio) { config.minHeight } else { height * config.minWidth / width }
         return Pair(2 * ((newWidth / 2).roundToInt()), 2 * ((newHeight / 2).roundToInt()))
     }
 
