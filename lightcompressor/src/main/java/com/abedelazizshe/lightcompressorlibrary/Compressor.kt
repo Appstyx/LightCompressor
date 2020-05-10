@@ -16,7 +16,7 @@ import kotlin.math.roundToInt
 
 data class Config(
     val minHeight: Double = 640.0,
-    val minWidth: Double = 360.0,
+    val minWidth: Double = 640.0,
     val minBitrate: Int = 750_000
 )
 
@@ -73,17 +73,17 @@ class Compressor(
         val newBitrate = config.minBitrate
 
         //Handle new width and height values
-        var (newWidth, newHeight) = generateWidthAndHeight(width.toDouble(), height.toDouble())
+        val (originalWidth, originalHeight) = when (rotation) {
+            90, 270 -> {
+                Pair(height.toDouble(), width.toDouble())
+            }
+            else -> Pair(width.toDouble(), height.toDouble())
+        }
+        val (newWidth, newHeight) = generateWidthAndHeight(originalWidth, originalHeight)
 
         //Handle rotation values and swapping height and width if needed
         rotation = when (rotation) {
-            90, 270 -> {
-                val tempHeight = newHeight
-                newHeight = newWidth
-                newWidth = tempHeight
-                0
-            }
-            180 -> 0
+            90, 180, 270 -> 0
             else -> rotation
         }
 
